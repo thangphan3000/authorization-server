@@ -25,7 +25,7 @@ export function createConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     jwtPrivateKeyPem: requireEnv(env, 'JWT_PRIVATE_KEY_PEM'),
     oauthClientId: requireEnv(env, 'OAUTH_CLIENT_ID'),
     oauthClientSecret: requireEnv(env, 'OAUTH_CLIENT_SECRET'),
-    oauthClientScopes: parseScopes(env.OAUTH_CLIENT_SCOPES ?? 'users:read orders:read'),
+    oauthClientScopes: requireScopes(env, 'OAUTH_CLIENT_SCOPES'),
   };
 }
 
@@ -45,4 +45,14 @@ function requireEnv(env: NodeJS.ProcessEnv, name: string): string {
   }
 
   return value;
+}
+
+function requireScopes(env: NodeJS.ProcessEnv, name: string): string[] {
+  const scopes = parseScopes(requireEnv(env, name));
+
+  if (scopes.length === 0) {
+    throw new Error(`${name} must contain at least one scope.`);
+  }
+
+  return scopes;
 }

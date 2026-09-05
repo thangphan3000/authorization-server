@@ -2,23 +2,25 @@
 
 Minimal OAuth2 authorization server with support for the client credentials flow.
 
+## Table of Contents
+
+- [Run](#run)
+- [Demo Client](#demo-client)
+- [JWT Details](#jwt-details)
+- [IdP Flow](#idp-flow)
+- [Endpoints](#endpoints)
+- [GET /](#get-)
+- [GET /.well-known/jwks.json](#get-well-knownjwksjson)
+- [POST /oauth/token](#post-oauthtoken)
+- [POST /oauth/introspect](#post-oauthintrospect)
+- [Typecheck](#typecheck)
+
 ## Run
+
+Install dependencies:
 
 ```bash
 pnpm install
-pnpm dev
-```
-
-Default server URL:
-
-```text
-http://127.0.0.1:3000
-```
-
-You can override the bind address:
-
-```bash
-HOST=127.0.0.1 PORT=4000 pnpm dev
 ```
 
 Generate a stable local JWT signing key:
@@ -27,7 +29,7 @@ Generate a stable local JWT signing key:
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out jwt-private.pem
 ```
 
-Run with the stable signing key:
+Start the server with required environment variables:
 
 ```bash
 JWT_PRIVATE_KEY_PEM="$(cat jwt-private.pem)" \
@@ -38,7 +40,26 @@ OAUTH_CLIENT_SCOPES="users:read orders:read" \
 pnpm dev
 ```
 
-`JWT_PRIVATE_KEY_PEM`, `OAUTH_CLIENT_ID`, and `OAUTH_CLIENT_SECRET` are required. The app fails during startup if any of them are missing.
+`JWT_PRIVATE_KEY_PEM`, `OAUTH_CLIENT_ID`, `OAUTH_CLIENT_SECRET`, and `OAUTH_CLIENT_SCOPES` are required. The app fails during startup if any of them are missing.
+
+Default server URL:
+
+```text
+http://127.0.0.1:3000
+```
+
+You can override the bind address:
+
+```bash
+JWT_PRIVATE_KEY_PEM="$(cat jwt-private.pem)" \
+JWT_KEY_ID=local-dev-key-1 \
+OAUTH_CLIENT_ID=service-a \
+OAUTH_CLIENT_SECRET="<client-secret>" \
+OAUTH_CLIENT_SCOPES="users:read orders:read" \
+HOST=127.0.0.1 \
+PORT=4000 \
+pnpm dev
+```
 
 ## Demo Client
 
@@ -107,7 +128,7 @@ sequenceDiagram
 Returns basic issuer metadata.
 
 ```bash
-curl -i http://127.0.0.1:3000/
+curl -s http://127.0.0.1:3000/ | jq
 ```
 
 Example response:
@@ -126,7 +147,7 @@ Example response:
 Returns the JSON Web Key Set that resource servers can use to verify JWT access tokens.
 
 ```bash
-curl -i http://127.0.0.1:3000/.well-known/jwks.json
+curl -s http://127.0.0.1:3000/.well-known/jwks.json | jq
 ```
 
 Example response:
@@ -171,14 +192,14 @@ Replace `<client-id>` and `<client-secret>` with the values configured in `OAUTH
 Successful request:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "grant_type": "client_credentials",
     "client_id": "<client-id>",
     "client_secret": "<client-secret>",
     "scope": "users:read"
   }' \
-  http://127.0.0.1:3000/oauth/token
+  http://127.0.0.1:3000/oauth/token | jq
 ```
 
 Example response:
@@ -201,25 +222,25 @@ node -e "const token = process.argv[1]; const [header, payload] = token.split('.
 Request without explicit scope:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "grant_type": "client_credentials",
     "client_id": "<client-id>",
     "client_secret": "<client-secret>"
   }' \
-  http://127.0.0.1:3000/oauth/token
+  http://127.0.0.1:3000/oauth/token | jq
 ```
 
 Invalid client:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "grant_type": "client_credentials",
     "client_id": "<client-id>",
     "client_secret": "<wrong-client-secret>"
   }' \
-  http://127.0.0.1:3000/oauth/token
+  http://127.0.0.1:3000/oauth/token | jq
 ```
 
 Expected response:
@@ -234,14 +255,14 @@ Expected response:
 Invalid scope:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "grant_type": "client_credentials",
     "client_id": "<client-id>",
     "client_secret": "<client-secret>",
     "scope": "admin"
   }' \
-  http://127.0.0.1:3000/oauth/token
+  http://127.0.0.1:3000/oauth/token | jq
 ```
 
 Expected response:
@@ -256,13 +277,13 @@ Expected response:
 Unsupported grant type:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "grant_type": "password",
     "client_id": "<client-id>",
     "client_secret": "<client-secret>"
   }' \
-  http://127.0.0.1:3000/oauth/token
+  http://127.0.0.1:3000/oauth/token | jq
 ```
 
 Expected response:
@@ -277,10 +298,10 @@ Expected response:
 HTTP Basic is rejected:
 
 ```bash
-curl -i \
+curl -s \
   -u "$OAUTH_CLIENT_ID:$OAUTH_CLIENT_SECRET" \
   --json '{"grant_type": "client_credentials"}' \
-  http://127.0.0.1:3000/oauth/token
+  http://127.0.0.1:3000/oauth/token | jq
 ```
 
 Expected response:
@@ -320,13 +341,13 @@ ACCESS_TOKEN=$(curl -s \
 Introspect the token:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "client_id": "<client-id>",
     "client_secret": "<client-secret>",
     "token": "<access-token>"
   }' \
-  http://127.0.0.1:3000/oauth/introspect
+  http://127.0.0.1:3000/oauth/introspect | jq
 ```
 
 Example active response:
@@ -348,13 +369,13 @@ Example active response:
 Introspect an invalid token:
 
 ```bash
-curl -i \
+curl -s \
   --json '{
     "client_id": "<client-id>",
     "client_secret": "<client-secret>",
     "token": "invalid-token"
   }' \
-  http://127.0.0.1:3000/oauth/introspect
+  http://127.0.0.1:3000/oauth/introspect | jq
 ```
 
 Expected response:
