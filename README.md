@@ -150,7 +150,7 @@ Example response:
 
 Issues an access token using the OAuth2 client credentials flow.
 
-Required form fields:
+Required JSON fields:
 
 ```text
 grant_type=client_credentials
@@ -158,7 +158,7 @@ client_id=<client id>
 client_secret=<client secret>
 ```
 
-Optional form field:
+Optional JSON field:
 
 ```text
 scope=<space separated scopes>
@@ -166,14 +166,18 @@ scope=<space separated scopes>
 
 If `scope` is omitted, all scopes allowed for the client are granted.
 
+Replace `<client-id>` and `<client-secret>` with the values configured in `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET`.
+
 Successful request:
 
 ```bash
 curl -i \
-  -d grant_type=client_credentials \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
-  -d scope=users:read \
+  --json '{
+    "grant_type": "client_credentials",
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>",
+    "scope": "users:read"
+  }' \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -198,9 +202,11 @@ Request without explicit scope:
 
 ```bash
 curl -i \
-  -d grant_type=client_credentials \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
+  --json '{
+    "grant_type": "client_credentials",
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>"
+  }' \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -208,9 +214,11 @@ Invalid client:
 
 ```bash
 curl -i \
-  -d grant_type=client_credentials \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="<wrong-client-secret>" \
+  --json '{
+    "grant_type": "client_credentials",
+    "client_id": "<client-id>",
+    "client_secret": "<wrong-client-secret>"
+  }' \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -227,10 +235,12 @@ Invalid scope:
 
 ```bash
 curl -i \
-  -d grant_type=client_credentials \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
-  -d scope=admin \
+  --json '{
+    "grant_type": "client_credentials",
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>",
+    "scope": "admin"
+  }' \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -247,9 +257,11 @@ Unsupported grant type:
 
 ```bash
 curl -i \
-  -d grant_type=password \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
+  --json '{
+    "grant_type": "password",
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>"
+  }' \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -267,7 +279,7 @@ HTTP Basic is rejected:
 ```bash
 curl -i \
   -u "$OAUTH_CLIENT_ID:$OAUTH_CLIENT_SECRET" \
-  -d grant_type=client_credentials \
+  --json '{"grant_type": "client_credentials"}' \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -284,7 +296,7 @@ Expected response:
 
 Checks whether an access token is active.
 
-Required form fields:
+Required JSON fields:
 
 ```text
 client_id=<client id>
@@ -296,10 +308,12 @@ Issue a token and save it:
 
 ```bash
 ACCESS_TOKEN=$(curl -s \
-  -d grant_type=client_credentials \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
-  -d scope=users:read \
+  --json '{
+    "grant_type": "client_credentials",
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>",
+    "scope": "users:read"
+  }' \
   http://127.0.0.1:3000/oauth/token | node -pe "JSON.parse(fs.readFileSync(0, 'utf8')).access_token")
 ```
 
@@ -307,9 +321,11 @@ Introspect the token:
 
 ```bash
 curl -i \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
-  -d token="$ACCESS_TOKEN" \
+  --json '{
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>",
+    "token": "<access-token>"
+  }' \
   http://127.0.0.1:3000/oauth/introspect
 ```
 
@@ -333,9 +349,11 @@ Introspect an invalid token:
 
 ```bash
 curl -i \
-  -d client_id="$OAUTH_CLIENT_ID" \
-  -d client_secret="$OAUTH_CLIENT_SECRET" \
-  -d token=invalid-token \
+  --json '{
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>",
+    "token": "invalid-token"
+  }' \
   http://127.0.0.1:3000/oauth/introspect
 ```
 
