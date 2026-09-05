@@ -30,16 +30,21 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out jwt-private.pe
 Run with the stable signing key:
 
 ```bash
-JWT_PRIVATE_KEY_PEM="$(cat jwt-private.pem)" JWT_KEY_ID=local-dev-key-1 pnpm dev
+JWT_PRIVATE_KEY_PEM="$(cat jwt-private.pem)" \
+JWT_KEY_ID=local-dev-key-1 \
+OAUTH_CLIENT_ID=service-a \
+OAUTH_CLIENT_SECRET="<client-secret>" \
+OAUTH_CLIENT_SCOPES="users:read orders:read" \
+pnpm dev
 ```
 
-`JWT_PRIVATE_KEY_PEM` is required. The app fails during startup if it is missing.
+`JWT_PRIVATE_KEY_PEM`, `OAUTH_CLIENT_ID`, and `OAUTH_CLIENT_SECRET` are required. The app fails during startup if any of them are missing.
 
 ## Demo Client
 
 ```text
-client_id: service-a
-client_secret: service-a-secret
+client_id: value from OAUTH_CLIENT_ID
+client_secret: value from OAUTH_CLIENT_SECRET
 allowed scopes: users:read orders:read
 allowed grant types: client_credentials
 ```
@@ -166,8 +171,8 @@ Successful request:
 ```bash
 curl -i \
   -d grant_type=client_credentials \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   -d scope=users:read \
   http://127.0.0.1:3000/oauth/token
 ```
@@ -194,8 +199,8 @@ Request without explicit scope:
 ```bash
 curl -i \
   -d grant_type=client_credentials \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -204,8 +209,8 @@ Invalid client:
 ```bash
 curl -i \
   -d grant_type=client_credentials \
-  -d client_id=service-a \
-  -d client_secret=wrong-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="<wrong-client-secret>" \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -223,8 +228,8 @@ Invalid scope:
 ```bash
 curl -i \
   -d grant_type=client_credentials \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   -d scope=admin \
   http://127.0.0.1:3000/oauth/token
 ```
@@ -243,8 +248,8 @@ Unsupported grant type:
 ```bash
 curl -i \
   -d grant_type=password \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   http://127.0.0.1:3000/oauth/token
 ```
 
@@ -261,7 +266,7 @@ HTTP Basic is rejected:
 
 ```bash
 curl -i \
-  -u service-a:service-a-secret \
+  -u "$OAUTH_CLIENT_ID:$OAUTH_CLIENT_SECRET" \
   -d grant_type=client_credentials \
   http://127.0.0.1:3000/oauth/token
 ```
@@ -292,8 +297,8 @@ Issue a token and save it:
 ```bash
 ACCESS_TOKEN=$(curl -s \
   -d grant_type=client_credentials \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   -d scope=users:read \
   http://127.0.0.1:3000/oauth/token | node -pe "JSON.parse(fs.readFileSync(0, 'utf8')).access_token")
 ```
@@ -302,8 +307,8 @@ Introspect the token:
 
 ```bash
 curl -i \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   -d token="$ACCESS_TOKEN" \
   http://127.0.0.1:3000/oauth/introspect
 ```
@@ -328,8 +333,8 @@ Introspect an invalid token:
 
 ```bash
 curl -i \
-  -d client_id=service-a \
-  -d client_secret=service-a-secret \
+  -d client_id="$OAUTH_CLIENT_ID" \
+  -d client_secret="$OAUTH_CLIENT_SECRET" \
   -d token=invalid-token \
   http://127.0.0.1:3000/oauth/introspect
 ```

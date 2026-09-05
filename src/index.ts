@@ -39,18 +39,7 @@ const jwksKeyId = process.env.JWT_KEY_ID ?? 'auth-server-dev-key-1';
 const audience = 'protected-api';
 const { privateKey, publicKey } = createSigningKeys();
 const publicJwk = publicKey.export({ format: 'jwk' });
-
-const clients = new Map<string, OAuthClient>([
-  [
-    'service-a',
-    {
-      id: 'service-a',
-      secret: 'service-a-secret',
-      allowedGrantTypes: ['client_credentials'],
-      scopes: ['users:read', 'orders:read'],
-    },
-  ],
-]);
+const clients = createClients();
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -240,6 +229,33 @@ function createSigningKeys(): {
     privateKey: configuredPrivateKey,
     publicKey: crypto.createPublicKey(configuredPrivateKey),
   };
+}
+
+function createClients(): Map<string, OAuthClient> {
+  const clientId = process.env.OAUTH_CLIENT_ID;
+  const clientSecret = process.env.OAUTH_CLIENT_SECRET;
+
+  if (!clientId) {
+    throw new Error('OAUTH_CLIENT_ID environment variable is required.');
+  }
+
+  if (!clientSecret) {
+    throw new Error('OAUTH_CLIENT_SECRET environment variable is required.');
+  }
+
+  const scopes = parseScopes(process.env.OAUTH_CLIENT_SCOPES ?? 'users:read orders:read');
+
+  return new Map<string, OAuthClient>([
+    [
+      clientId,
+      {
+        id: clientId,
+        secret: clientSecret,
+        allowedGrantTypes: ['client_credentials'],
+        scopes,
+      },
+    ],
+  ]);
 }
 
 function signAccessToken(payload: AccessTokenPayload): string {
