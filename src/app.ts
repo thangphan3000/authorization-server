@@ -1,8 +1,8 @@
-import express, { type Express, type Request, type Response } from 'express';
-import { createClients } from './clients.ts';
-import type { AppConfig } from './config.ts';
-import { createJwtService } from './jwt.ts';
-import { createOAuthRouter } from './oauth.ts';
+import express, { type Express, type Request, type Response } from "express";
+import { createClients } from "./clients.ts";
+import type { AppConfig } from "./config.ts";
+import { createJwtService } from "./jwt.ts";
+import { createOAuthRouter } from "./oauth.ts";
 
 export function createApp(config: AppConfig): Express {
   const app = express();
@@ -12,7 +12,7 @@ export function createApp(config: AppConfig): Express {
   app.use(express.urlencoded({ extended: false }));
   app.use(express.json());
 
-  app.get('/', (req: Request, res: Response) => {
+  app.get("/metadata", (req: Request, res: Response) => {
     res.json({
       issuer: config.issuer,
       token_endpoint: `${config.issuer}/oauth/token`,
@@ -21,11 +21,11 @@ export function createApp(config: AppConfig): Express {
     });
   });
 
-  app.get('/.well-known/jwks.json', (req: Request, res: Response) => {
+  app.get("/.well-known/jwks.json", (req: Request, res: Response) => {
     res.json(jwtService.getJwks());
   });
 
-  app.use('/oauth', createOAuthRouter({ config, clients, jwtService }));
+  app.use("/oauth", createOAuthRouter({ config, clients, jwtService }));
 
   return app;
 }

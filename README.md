@@ -9,7 +9,7 @@ Minimal OAuth2 authorization server with support for the client credentials flow
 - [JWT Details](#jwt-details)
 - [IdP Flow](#idp-flow)
 - [Endpoints](#endpoints)
-- [GET /](#get-)
+- [GET /metadata](#get-metadata)
 - [GET /.well-known/jwks.json](#get-well-knownjwksjson)
 - [POST /oauth/token](#post-oauthtoken)
 - [POST /oauth/introspect](#post-oauthintrospect)
@@ -123,12 +123,12 @@ sequenceDiagram
 
 ## Endpoints
 
-### GET /
+### GET /metadata
 
 Returns basic issuer metadata.
 
 ```bash
-curl -s http://127.0.0.1:3000/ | jq
+curl -s http://127.0.0.1:3000/metadata | jq
 ```
 
 Example response:
@@ -211,6 +211,19 @@ Example response:
   "expires_in": 3600,
   "scope": "users:read"
 }
+```
+
+Save the access token for later examples:
+
+```bash
+ACCESS_TOKEN=$(curl -s \
+  --json '{
+    "grant_type": "client_credentials",
+    "client_id": "<client-id>",
+    "client_secret": "<client-secret>",
+    "scope": "users:read"
+  }' \
+  http://127.0.0.1:3000/oauth/token | node -pe "JSON.parse(fs.readFileSync(0, 'utf8')).access_token")
 ```
 
 Decode the JWT header and payload locally:
@@ -317,12 +330,12 @@ Expected response:
 
 Checks whether an access token is active.
 
-Required JSON fields:
+Required request data:
 
 ```text
+Authorization: Bearer <access token>
 client_id=<client id>
 client_secret=<client secret>
-token=<access token>
 ```
 
 Issue a token and save it:
@@ -342,10 +355,10 @@ Introspect the token:
 
 ```bash
 curl -s \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   --json '{
     "client_id": "<client-id>",
-    "client_secret": "<client-secret>",
-    "token": "<access-token>"
+    "client_secret": "<client-secret>"
   }' \
   http://127.0.0.1:3000/oauth/introspect | jq
 ```
@@ -370,10 +383,10 @@ Introspect an invalid token:
 
 ```bash
 curl -s \
+  -H "Authorization: Bearer invalid-token" \
   --json '{
     "client_id": "<client-id>",
-    "client_secret": "<client-secret>",
-    "token": "invalid-token"
+    "client_secret": "<client-secret>"
   }' \
   http://127.0.0.1:3000/oauth/introspect | jq
 ```

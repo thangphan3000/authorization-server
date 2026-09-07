@@ -1,4 +1,4 @@
-import type { AppConfig } from './config.ts';
+import type { AppConfig } from "./config.ts";
 
 export type OAuthClient = {
   id: string;
@@ -14,7 +14,7 @@ export function createClients(config: AppConfig): Map<string, OAuthClient> {
       {
         id: config.oauthClientId,
         secret: config.oauthClientSecret,
-        allowedGrantTypes: ['client_credentials'],
+        allowedGrantTypes: ["client_credentials"],
         scopes: config.oauthClientScopes,
       },
     ],
