@@ -35,7 +35,7 @@ Start the server with required environment variables:
 JWT_PRIVATE_KEY_PEM="$(cat jwt-private.pem)" \
 JWT_KEY_ID=local-dev-key-1 \
 OAUTH_CLIENT_ID=service-a \
-OAUTH_CLIENT_SECRET="<client-secret>" \
+OAUTH_CLIENT_SECRET="client-secret" \
 OAUTH_CLIENT_SCOPES="users:read orders:read" \
 pnpm dev
 ```
@@ -54,7 +54,7 @@ You can override the bind address:
 JWT_PRIVATE_KEY_PEM="$(cat jwt-private.pem)" \
 JWT_KEY_ID=local-dev-key-1 \
 OAUTH_CLIENT_ID=service-a \
-OAUTH_CLIENT_SECRET="<client-secret>" \
+OAUTH_CLIENT_SECRET="client-secret" \
 OAUTH_CLIENT_SCOPES="users:read orders:read" \
 HOST=127.0.0.1 \
 PORT=4000 \
@@ -88,7 +88,7 @@ Current claims:
 ```text
 iss: authorization server issuer URL
 sub: client id
-aud: protected-api
+aud: staffapi
 client_id: client id
 scope: granted scopes
 token_type: Bearer
@@ -159,7 +159,7 @@ Example response:
       "kty": "RSA",
       "n": "<modulus>",
       "e": "AQAB",
-      "kid": "auth-server-dev-key-1",
+      "kid": "local-dev-key-1",
       "alg": "RS256",
       "use": "sig"
     }
@@ -187,7 +187,7 @@ scope=<space separated scopes>
 
 If `scope` is omitted, all scopes allowed for the client are granted.
 
-Replace `<client-id>` and `<client-secret>` with the values configured in `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET`.
+The examples below use the values from the run command above.
 
 Successful request:
 
@@ -195,8 +195,8 @@ Successful request:
 curl -s \
   --json '{
     "grant_type": "client_credentials",
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>",
+    "client_id": "service-a",
+    "client_secret": "client-secret",
     "scope": "users:read"
   }' \
   http://127.0.0.1:3000/oauth/token | jq
@@ -219,11 +219,11 @@ Save the access token for later examples:
 ACCESS_TOKEN=$(curl -s \
   --json '{
     "grant_type": "client_credentials",
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>",
+    "client_id": "service-a",
+    "client_secret": "client-secret",
     "scope": "users:read"
   }' \
-  http://127.0.0.1:3000/oauth/token | node -pe "JSON.parse(fs.readFileSync(0, 'utf8')).access_token")
+  http://127.0.0.1:3000/oauth/token | jq -r ".access_token")
 ```
 
 Decode the JWT header and payload locally:
@@ -238,8 +238,8 @@ Request without explicit scope:
 curl -s \
   --json '{
     "grant_type": "client_credentials",
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>"
+    "client_id": "service-a",
+    "client_secret": "client-secret"
   }' \
   http://127.0.0.1:3000/oauth/token | jq
 ```
@@ -250,8 +250,8 @@ Invalid client:
 curl -s \
   --json '{
     "grant_type": "client_credentials",
-    "client_id": "<client-id>",
-    "client_secret": "<wrong-client-secret>"
+    "client_id": "service-a",
+    "client_secret": "wrong-client-secret"
   }' \
   http://127.0.0.1:3000/oauth/token | jq
 ```
@@ -271,8 +271,8 @@ Invalid scope:
 curl -s \
   --json '{
     "grant_type": "client_credentials",
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>",
+    "client_id": "service-a",
+    "client_secret": "client-secret",
     "scope": "admin"
   }' \
   http://127.0.0.1:3000/oauth/token | jq
@@ -293,8 +293,8 @@ Unsupported grant type:
 curl -s \
   --json '{
     "grant_type": "password",
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>"
+    "client_id": "service-a",
+    "client_secret": "client-secret"
   }' \
   http://127.0.0.1:3000/oauth/token | jq
 ```
@@ -344,11 +344,11 @@ Issue a token and save it:
 ACCESS_TOKEN=$(curl -s \
   --json '{
     "grant_type": "client_credentials",
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>",
+    "client_id": "service-a",
+    "client_secret": "client-secret",
     "scope": "users:read"
   }' \
-  http://127.0.0.1:3000/oauth/token | node -pe "JSON.parse(fs.readFileSync(0, 'utf8')).access_token")
+  http://127.0.0.1:3000/oauth/token | jq -r ".access_token")
 ```
 
 Introspect the token:
@@ -357,8 +357,8 @@ Introspect the token:
 curl -s \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   --json '{
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>"
+    "client_id": "service-a",
+    "client_secret": "client-secret"
   }' \
   http://127.0.0.1:3000/oauth/introspect | jq
 ```
@@ -370,7 +370,7 @@ Example active response:
   "active": true,
   "iss": "http://127.0.0.1:3000",
   "sub": "service-a",
-  "aud": "protected-api",
+  "aud": "staffapi",
   "client_id": "service-a",
   "scope": "users:read",
   "token_type": "Bearer",
@@ -385,8 +385,8 @@ Introspect an invalid token:
 curl -s \
   -H "Authorization: Bearer invalid-token" \
   --json '{
-    "client_id": "<client-id>",
-    "client_secret": "<client-secret>"
+    "client_id": "service-a",
+    "client_secret": "client-secret"
   }' \
   http://127.0.0.1:3000/oauth/introspect | jq
 ```
