@@ -79,6 +79,7 @@ export function createJwtService(config: AppConfig): JwtService {
       );
 
       if (!isValidSignature) {
+        console.log("[INFO] JWT is invalid");
         return undefined;
       }
 
